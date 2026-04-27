@@ -1,0 +1,30 @@
+name: Deploy to Raspberry Pi
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: self-hosted   # ← uruchamia się na Twoim RPi
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout kodu
+        uses: actions/checkout@v4
+
+      - name: Zatrzymaj działające kontenery
+        working-directory: /opt/demo
+        run: docker compose down --remove-orphans
+
+      - name: Pobierz najnowszy kod
+        working-directory: /opt/demo
+        run: git pull origin main
+
+      - name: Zbuduj i uruchom
+        working-directory: /opt/demo
+        run: docker compose up --build -d
+
+      - name: Sprawdź status
+        run: docker compose -f /opt/demo/docker-compose.yml ps

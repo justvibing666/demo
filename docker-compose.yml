@@ -1,0 +1,64 @@
+version: '3.9'
+
+services:
+
+  db:
+    image: postgres:16-alpine
+    container_name: demo-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: demo_db
+      POSTGRES_USER: demo_user
+      POSTGRES_PASSWORD: demo_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U demo_user -d demo_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: demo-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: demo_db
+      DB_USER: demo_user
+      DB_PASSWORD: demo_pass
+      SERVER_PORT: 8080
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/api/actuator/health | grep UP || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: demo-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+
+volumes:
+  postgres_data:
+
+networks:
+  default:
+    name: demo-network

@@ -1,0 +1,26 @@
+# Profil deweloperski – nadpisuje wartości z application.yml
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/demo_db
+    username: demo_user
+    password: demo_pass
+
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  devtools:
+    restart:
+      enabled: true
+    livereload:
+      enabled: true
+
+logging:
+  level:
+    root: DEBUG
+    com.demo: TRACE
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql: TRACE

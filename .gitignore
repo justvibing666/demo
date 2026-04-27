@@ -1,0 +1,93 @@
+# ========================
+# Java / Maven / Spring Boot
+# ========================
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.zip
+*.tar.gz
+*.rar
+
+# Maven
+.mvn/
+!.mvn/wrapper/maven-wrapper.jar
+!.mvn/wrapper/maven-wrapper.properties
+
+# Spring Boot logs i tmp
+*.log
+spring.log
+logs/
+tmp/
+
+# ========================
+# Node.js / Vue / Vite
+# ========================
+node_modules/
+dist/
+dist-ssr/
+*.local
+.cache/
+
+# Vite
+.vite/
+
+# ========================
+# Baza danych
+# ========================
+*.sql.bak
+dump.sql
+
+# ========================
+# Docker
+# ========================
+# (pliki docker-compose są celowo śledzone)
+
+# ========================
+# IDE
+# ========================
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# NetBeans
+nbproject/
+
+# ========================
+# OS
+# ========================
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+
+# ========================
+# Zmienne środowiskowe
+# ========================
+.env
+.env.local
+.env.*.local
+*.env
+
+# ========================
+# Misc
+# ========================
+*.bak
+*.tmp
+.history/

@@ -13,6 +13,8 @@
     </ul>
 
     <button @click="store.fetchAll">Odśwież</button>
+
+    <p>test2</p>
   </div>
 </template>
 

@@ -1,42 +1,18 @@
 # Demo
 
-Aplikacja webowa zbudowana na stosie **Spring Boot + Vue.js + PostgreSQL**, gotowa do uruchomienia lokalnie oraz w kontenerach Docker. Automatyczny deployment na Raspberry Pi przez GitHub Actions.
+Aplikacja webowa zbudowana na stosie **Spring Boot + Vue.js + PostgreSQL**, gotowa do uruchomienia lokalnie oraz w kontenerach Docker.
 
 ---
 
 ## Stos technologiczny
 
-| Warstwa     | Technologia                                          |
-|-------------|------------------------------------------------------|
-| Backend     | Java 21, Spring Boot 3.3, Spring Security, Maven     |
-| Frontend    | Vue 3, Vite, Pinia, Vue Router, Axios                |
-| Baza danych | PostgreSQL 16                                        |
-| Migracje    | Flyway                                               |
-| Kontenery   | Docker, Docker Compose, Nginx                        |
-| CI/CD       | GitHub Actions → self-hosted runner (Raspberry Pi)   |
-
----
-
-## Architektura
-
-```
-                  ┌─────────────────────────────────────┐
-                  │           Docker network             │
-  :80  ┌──────────┤   Nginx (frontend)                  │
-──────►│ frontend │   serwuje pliki statyczne Vue,       │
-       └──────────┤   proxy /api → backend:8080          │
-                  │                  │                   │
-       :8080      │       ┌──────────▼──────────┐        │
-──────►(internal) │       │  Spring Boot backend│        │
-                  │       └──────────┬──────────┘        │
-                  │                  │ JDBC              │
-                  │       ┌──────────▼──────────┐        │
-                  │       │   PostgreSQL 16      │        │
-                  │       └─────────────────────┘        │
-                  └─────────────────────────────────────┘
-```
-
-Nginx pełni dwie role: serwuje zbudowane pliki statyczne frontendu i proxy'uje żądania pod ścieżką `/api` do kontenera backendu.
+| Warstwa    | Technologia                              |
+|------------|------------------------------------------|
+| Backend    | Java 21, Spring Boot 3.3, Maven          |
+| Frontend   | Vue 3, Vite, Pinia, Vue Router, Axios    |
+| Baza danych| PostgreSQL 16                            |
+| Migracje   | Flyway                                   |
+| Kontenery  | Docker, Docker Compose, Nginx            |
 
 ---
 
@@ -92,6 +68,7 @@ demo/
 ├── frontend/                 # Vue 3 + Vite
 │   ├── src/
 │   │   ├── api/              # Klient HTTP (Axios)
+│   │   ├── components/       # Komponenty wielokrotnego użytku
 │   │   ├── router/           # Vue Router
 │   │   ├── store/            # Pinia store
 │   │   └── views/            # Widoki (strony)
@@ -100,28 +77,25 @@ demo/
 │   └── Dockerfile
 ├── docker-compose.yml        # Produkcja
 ├── docker-compose.dev.yml    # Developerska (tylko DB)
-└── .github/
-    └── deploy.yml            # GitHub Actions – deploy na RPi
+└── .gitignore
 ```
 
 ---
 
 ## Wymagania
 
-| Narzędzie      | Wersja min. | Do czego                       |
-|----------------|-------------|--------------------------------|
-| Java           | 21          | Uruchamianie backendu lokalnie |
-| Node.js + npm  | 22          | Uruchamianie frontendu lokalnie|
-| Docker Engine  | 24          | Kontenery                      |
-| Docker Compose | v2 (plugin) | Orkiestracja kontenerów        |
+- **Java 21+**
+- **Node.js 22+** i npm
+- **Docker** i **Docker Compose** (do uruchamiania w kontenerach)
+- **PostgreSQL 16** (opcjonalnie lokalnie, jeśli nie używasz Dockera)
 
 ---
 
 ## Uruchomienie
 
-### Tryb deweloperski (hot-reload)
+### Tryb deweloperski
 
-Uruchom bazę danych w kontenerze, backend i frontend lokalnie.
+Uruchom bazę danych w kontenerze, backend i frontend lokalnie (hot-reload).
 
 ```bash
 # 1. Baza danych
@@ -137,11 +111,8 @@ npm install
 npm run dev
 ```
 
-| Serwis      | Adres                                           |
-|-------------|-------------------------------------------------|
-| Frontend    | http://localhost:5173                           |
-| Backend API | http://localhost:8080/api                       |
-| Health      | http://localhost:8080/api/actuator/health       |
+Aplikacja dostępna pod adresem: [http://localhost:5173](http://localhost:5173)  
+Backend API: [http://localhost:8080/api](http://localhost:8080/api)
 
 ### Produkcja (Docker Compose)
 
@@ -149,25 +120,26 @@ Buduje wszystkie obrazy i uruchamia pełny stos. Kolejność startowania jest wy
 `db` → `backend` → `frontend`.
 
 ```bash
-docker compose up --build -d
+docker compose up --build
 ```
 
-Aplikacja dostępna pod adresem: http://localhost
+Aplikacja dostępna pod adresem: [http://localhost](http://localhost)
 
 Zatrzymanie i usunięcie kontenerów:
 
 ```bash
-docker compose down          # zatrzymuje
-docker compose down -v       # zatrzymuje + usuwa wolumen DB
+docker compose down
+# wraz z wolumenem bazy danych:
+docker compose down -v
 ```
 
 ---
 
 ## Konfiguracja
 
-### Zmienne środowiskowe backendu
+### Backend – zmienne środowiskowe
 
-Wartości domyślne zdefiniowane w `application.yml`. Można je nadpisać zmiennymi środowiskowymi lub plikiem `.env` w katalogu głównym.
+Wartości domyślne zdefiniowane w `application.yml`. Można je nadpisać zmiennymi środowiskowymi lub plikiem `.env`.
 
 | Zmienna       | Domyślna wartość | Opis                   |
 |---------------|------------------|------------------------|
@@ -189,8 +161,8 @@ Wartości domyślne zdefiniowane w `application.yml`. Można je nadpisać zmienn
 Aktywacja profilu:
 ```bash
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
-# lub przy uruchamianiu JAR
-java -jar target/demo-backend-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev
+# lub
+java -jar app.jar --spring.profiles.active=dev
 ```
 
 ### Pula połączeń (HikariCP)
@@ -345,64 +317,26 @@ Backend używa Spring Security w trybie **bezstanowym** (JWT-ready):
 
 ---
 
-## Baza danych
+## Migracje bazy danych
 
-### Schemat
+Projekt używa **Flyway** do zarządzania schematem bazy. Skrypty migracji znajdują się w:
 
-Tabela `example_entity` tworzona przez Flyway przy pierwszym uruchomieniu:
-
-```sql
-CREATE TABLE IF NOT EXISTS example_entity (
-    id         BIGSERIAL PRIMARY KEY,
-    name       VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP    NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP    NOT NULL DEFAULT NOW()
-);
+```
+backend/src/main/resources/db/migration/
 ```
 
-### Migracje (Flyway)
+Konwencja nazewnictwa plików: `V{numer}__{opis}.sql`, np. `V1__init_schema.sql`.
 
 Flyway uruchamia migracje automatycznie przy starcie aplikacji. Parametr `baseline-on-migrate: true` pozwala na migrację istniejącej bazy bez historii Flyway.
 
-Konwencja: `V{numer}__{opis}.sql`, np. `V1__init_schema.sql`, `V2__add_description_column.sql`.
+---
 
-Flyway uruchamia migracje automatycznie przy starcie aplikacji. Historię migracji przechowuje w tabeli `flyway_schema_history`.
-
-Ręczne wykonanie migracji (bez startu aplikacji):
+## Testy
 
 ```bash
 cd backend
-./mvnw flyway:migrate -Dflyway.url=jdbc:postgresql://localhost:5432/demo_db \
-  -Dflyway.user=demo_user -Dflyway.password=demo_pass
+./mvnw test
 ```
-
----
-
-## CI/CD – Deployment na Raspberry Pi
-
-Każdy push na branch `main` uruchamia workflow `.github/deploy.yml` na self-hosted runnerze zainstalowanym na Raspberry Pi.
-
-### Kroki pipeline
-
-```
-push → main
-  └── deploy (self-hosted runner na RPi)
-        ├── checkout kodu
-        ├── docker compose down --remove-orphans
-        ├── git pull origin main
-        ├── docker compose up --build -d
-        └── docker compose ps (weryfikacja)
-```
-
-### Konfiguracja runnera na RPi
-
-1. W repozytorium GitHub: **Settings → Actions → Runners → New self-hosted runner**
-2. Postępuj zgodnie z instrukcjami instalacji dla Linux (ARM)
-3. Runner musi mieć dostęp do Dockera:
-   ```bash
-   sudo usermod -aG docker $USER   # dodaj usera runnera do grupy docker
-   ```
-4. Projekt powinien być sklonowany w `/opt/demo` na Raspberry Pi.
 
 ---
 
@@ -424,51 +358,19 @@ npm run build
 # Pliki wynikowe: dist/
 ```
 
-### Obrazy Docker
-
-```bash
-# Backend
-docker build -t demo-backend ./backend
-
-# Frontend
-docker build -t demo-frontend ./frontend
-```
-
 ---
 
-## Testy
+## Healthcheck
 
-```bash
-cd backend
-./mvnw test
+Po uruchomieniu dostępny jest endpoint sprawdzający stan aplikacji:
+
+```
+GET /api/actuator/health
 ```
 
-Projekt zawiera:
-- `DemoApplicationTests` – test kontekstu Spring (smoke test)
-- Zależność `spring-security-test` dla testów wymagających kontekstu bezpieczeństwa
-
----
-
-## Porady deweloperskie
-
-**Resetowanie bazy danych w trybie dev:**
-```bash
-docker compose -f docker-compose.dev.yml down -v
-docker compose -f docker-compose.dev.yml up -d
-```
-
-**Podgląd logów backendu w Docker:**
-```bash
-docker logs -f demo-backend
-```
-
-**Podgląd logów SQL (profil dev):**
-Logi zapytań SQL są automatycznie włączone w profilu `dev` – widoczne w konsoli podczas uruchamiania `./mvnw spring-boot:run`.
-
-**Linting frontendu:**
-```bash
-cd frontend
-npm run lint
+Przykładowa odpowiedź:
+```json
+{ "status": "UP" }
 ```
 
 Docker Compose używa tego endpointu jako healthcheck backendu (sprawdzany co 30s, 3 próby).

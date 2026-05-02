@@ -2,6 +2,7 @@
   <div id="app">
     <nav class="navbar">
       <RouterLink to="/">Strona główna</RouterLink>
+      <RouterLink to="/movies">Filmy</RouterLink>
       <RouterLink to="/about">O aplikacji</RouterLink>
     </nav>
 

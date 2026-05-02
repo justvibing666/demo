@@ -10,8 +10,17 @@ const routes = [
   {
     path: '/about',
     name: 'about',
-    // Lazy loading
     component: () => import('@/views/AboutView.vue')
+  },
+  {
+    path: '/movies',
+    name: 'movies',
+    component: () => import('@/views/MovieGridView.vue')
+  },
+  {
+    path: '/movies/new',
+    name: 'movie-new',
+    component: () => import('@/views/MovieFormView.vue')
   }
 ]
 
